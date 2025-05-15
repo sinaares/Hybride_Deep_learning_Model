@@ -33,10 +33,38 @@ show()
 
 #Finding the frauds
 mappings = som.win_map(x)
-frauds = np.concatenate((mappings[(5,3)], mappings[(8,3)]) , axis = 0)
+frauds = np.concatenate((mappings[(5,3)], mappings[(8,3)]), axis = 0)
 frauds = sc.inverse_transform(frauds)
 
 
 
-
+#Creating the matrix of features
 customers = dataset.iloc[:, 1:].values
+
+#Creating the dependent variable
+is_fraud = np.zeros(len(dataset))
+for i in range(len(dataset)):
+    if(dataset.iloc[i, 0] in frauds):
+        is_fraud[i] = 1
+
+
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+customers = sc.fit_transform(customers)
+
+import tensorflow as tf
+tf.__version__
+
+
+ann = tf.keras.models.Sequential()
+ann.add(tf.keras.layers.Dense(units=2, activation='relu'))
+ann.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
+ann.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+
+ann.fit(customers, is_fraud, batch_size = 1, epochs = 10)
+
+y_pred = ann.predict(customers)
+y_pred = np.concatenate((dataset.iloc[:, 0:1].values, y_pred), axis = 1)
+y_pred = y_pred[y_pred[:, 1].argsort()]
+
+print(y_pred)
